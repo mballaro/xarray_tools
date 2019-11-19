@@ -2,6 +2,7 @@ import xarray as xr
 from datetime import datetime
 from netCDF4 import num2date, date2num
 
+xr.set_options(file_cache_maxsize=2)
 
 def load_data(input_file, lon_name='lon', lat_name='lat', time_name='time',
               add_initial_date=None, extent=None, period=None, ctime_unit=None, calendar_type=None, **kwargs):
@@ -11,10 +12,11 @@ def load_data(input_file, lon_name='lon', lat_name='lat', time_name='time',
     """
     # Open either single or multi-file data set depending if list of wildcard
     if "*" in input_file or isinstance(input_file, list):
-        ds = xr.open_mfdataset(input_file, concat_dim=time_name, decode_times=False, autoclose=True,
-                               chunks={time_name: 1})
+        # ds = xr.open_mfdataset(input_file, concat_dim=time_name, decode_times=False, autoclose=True,
+        #                        chunks={time_name: 1})
+        ds = xr.open_mfdataset(input_file, concat_dim=time_name, decode_times=False, chunks={time_name: 1})
     else:
-        ds = xr.open_dataset(input_file, decode_times=False, autoclose=True, chunks={time_name: 1})
+        ds = xr.open_dataset(input_file, decode_times=False, chunks={time_name: 1})
 
     if extent:
         south, north, west, east = extent
@@ -43,8 +45,11 @@ def load_data(input_file, lon_name='lon', lat_name='lat', time_name='time',
         except KeyError:
             time_units = ctime_unit
 
-        t1 = date2num(datetime(*period[0]), time_units, calendar)
-        t2 = date2num(datetime(*period[1]), time_units, calendar)
+        #t1 = date2num(datetime(*period[0]), time_units, calendar)
+        #t2 = date2num(datetime(*period[1]), time_units, calendar)
+        t1 = date2num(period[0], time_units, calendar)
+        t2 = date2num(period[1], time_units, calendar) 
+        print(t1, t2)    
 
         if add_initial_date is None:
             ds = ds.sel(time=(ds[time_name] >= t1) & (ds[time_name] <= t2))

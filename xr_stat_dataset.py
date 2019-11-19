@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 from dask.diagnostics import ProgressBar
 from rw import load_data
 import argparse
+import datetime
 
 display = False
 
@@ -25,13 +26,27 @@ parser.add_argument("--time_name", help="time name", default='time')
 
 parser.add_argument("--extent", nargs='+', type=float, help="spatial selection as South North West East")
 
-parser.add_argument("--period", type=list, help="temporal selection")
+def valid_datetime_type(arg_datetime_str):
+    """custom argparse type for user datetime values given from the command line"""
+    try:
+        return datetime.datetime.strptime(arg_datetime_str, "%Y-%m-%d %H:%M")
+    except ValueError:
+        msg = "Given Datetime ({0}) not valid! Expected format, 'YYYY-MM-DD HH:mm'!".format(arg_datetime_str)
+    raise argparse.ArgumentTypeError(msg)
+    
+parser.add_argument('--startdate', type=valid_datetime_type,help='start datetime in format "YYYY-MM-DD HH:mm"')
+
+parser.add_argument('--enddate', type=valid_datetime_type,help='end datetime in format "YYYY-MM-DD HH:mm"')
+
+# parser.add_argument("--period", type=list, help="temporal selection")
 
 parser.add_argument("--time_unit", help="speficy time unit in dataset")
 
 parser.add_argument("--calendar", help="specify calendar type in dataset")
 
 args = parser.parse_args()
+
+args.period = [args.startdate, args.enddate]
 
 dataset = load_data(str(args.input_file_name), lon_name=args.lon_name, lat_name=args.lat_name, time_name=args.time_name,
                     extent=args.extent, period=args.period)
